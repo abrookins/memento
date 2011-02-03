@@ -19,8 +19,7 @@ get '/login': ->
     render 'login'
 
 post '/login': ->
-    found = false
-    redirect path unless params.username
+    render '/login' unless params.username
     User.findOne {username: params.username}, (err, user) =>
         found = false
         if err
@@ -28,7 +27,6 @@ post '/login': ->
         if user
             salt = "superblahblah--#{params.username}"
             salted_password = node_hash.sha1 params.password, salt
-            console.log user.password, salted_password
 
             if user.password is salted_password
                 session.regenerate ->
