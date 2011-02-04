@@ -1,14 +1,15 @@
-# Parse GMaps RSS and create Place data.
+# Parse GMaps RSS feeds.
 request = require 'request'
 sys = require 'sys'
 xml2js = require 'xml2js-expat'
 
 class Parser 
     constructor: (@url) ->
-    
+   
+    # Retrieve the georss/XML feed from Google, parse it into JSON.
     getJson: (callback) ->
         request {uri: @url}, (err, response, body) ->
-            if err? and error?
+            if err?
                 callback(err)
             parser = new xml2js.Parser()
             parser.addListener 'end', (result, err) ->
@@ -17,20 +18,25 @@ class Parser
                 callback null, result
             parser.parseString body
 
+    # Parse coordinates and dates from the JSONified feed.
     parse: (callback) ->
         @getJson (err, result) ->
-            if err? and err?
+            entries = []
+            if err?
                 callback(err)
-
-            #entries = []
-            #for entry in result.content.entries
-            #    entries.append
-            #        author: entry.author
-
+            for entry in result.channel.item
+                entries.push
+                    author: entry.author
+                    date: new Date(Date.parse entry.pubDate)
+                    title: entry.title
+                    description: entry.description
+                    point:
+                        lat: entry['georss:point'].split(' ')[0]
+                        lon: entry['georss:point'].split(' ')[1]
             parsedResult =
                 title: result.channel.title
                 subtitle: result.channel.title
-                entries: result.channel.item
+                entries: entries
             callback null, parsedResult
     
 #Adapter for Google Maps My Places RSS feed.

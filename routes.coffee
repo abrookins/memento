@@ -19,6 +19,7 @@ get '/login': ->
     render 'login'
 
 post '/login': ->
+    User = mongoose.model "User"
     render '/login' unless params.username
     User.findOne {username: params.username}, (err, user) =>
         found = false
@@ -27,7 +28,6 @@ post '/login': ->
         if user
             salt = "superblahblah--#{params.username}"
             salted_password = node_hash.sha1 params.password, salt
-
             if user.password is salted_password
                 session.regenerate ->
                     session.user = user
@@ -51,7 +51,6 @@ post '/signup': ->
     salted_confirm_password = node_hash.sha1 params.password_confirm, salt
     signup_user = null
     message = null
-
     user = new User()
     user.username = params.username
     user.password = salted_password
