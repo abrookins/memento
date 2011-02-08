@@ -1,10 +1,18 @@
 # Models
-
-mongoose = require 'mongoose'
+mongoose = require './lib/mongoose'
 db = mongoose.connect 'mongodb://localhost/memento'
 Schema = mongoose.Schema
+ObjectId = Schema.ObjectId
 
-mongoose.model "Memory", new Schema
+# Permissions
+Permission = new Schema
+    userId: {type: ObjectId, required: yes}
+    canView: {type: Boolean, default: no}
+    canChange: {type: Boolean, default: no}
+    canDelete: {type: Boolean, default: no}
+mongoose.model "Permission", Permission
+
+Memory = new Schema
     title: String
     description: String
     place: String
@@ -14,28 +22,28 @@ mongoose.model "Memory", new Schema
     date_added: { type: Date, default: Date.now }
     date_modified: { type: Date, default: Date.now }
     author: String # Sucks to change, but noSQL?
-    userId: Schema.ObjectId # Ref to user owner
-Memory = mongoose.model "Memory"
+    permissions: [Permission]
+mongoose.model "Memory", Memory
 
-mongoose.model "Map", new Schema
-    # TODO: permissions
+Map = new Schema
     title: String # TODO: Unique
-    username: String
-    userId: Schema.ObjectId
+    owner: String # Username
     memories: [Memory]
-Map = mongoose.model "Map"
+    permissions: [Permission]
+mongoose.model "Map", Map
 
-mongoose.model "User", new Schema
-    username: String # TODO: Unique
-    email: String # TODO: Unique
+User = new Schema
+    admin: Boolean
+    username: {type: String, unique: yes}
+    email: {type: String, unique: yes}
     password: String
     date_added: { type: Date, default: Date.now }
     date_modified: { type: Date, default: Date.now }
-    memories: [Memory] # Data duplication FTW?
-    maps: [Map]
-User = mongoose.model "User"
+mongoose.model "User", User
 
 # Make models available to import.
-module.exports.User = User
-module.exports.Map = Map
-module.exports.Memory = Memory
+module.exports.User = mongoose.model "User"
+module.exports.Map = mongoose.model "Map"
+module.exports.Memory = mongoose.model "Memory"
+module.exports.Permission = mongoose.model "Permission"
+
