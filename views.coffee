@@ -32,6 +32,7 @@ view signup: ->
         button "Submit"
 
 view map: ->
+    memoryJson = (memory.toJSON() for memory in @map.memories)
     # TODO: Generate years with list comprehension in view.
     div id: 'lifemap', ->
         div id: 'navigation-container', ->
@@ -52,23 +53,28 @@ view map: ->
         div id: 'content', ->
             div id: 'mapcontainer', ->
                 div id: 'map'
-    coffeescript ->
-        $(window).load ->
-            hc = new HomeController()
-            hc.refresh(@memoryJson)
-            Backbone.history.start()
-
+    script """
+        (function($) { 
+            $(window).load(function() {
+                var hc = new HomeController();
+                hc.refresh([#{memoryJson}]);
+                Backbone.history.start();
+            });
+        })(jQuery);
+        """
 layout ->
     html ->
-        head -> title 'Our Life'
-        script src: 'http://maps.google.com/maps/api/js?sensor=false'
-        script src: 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js'
-        script src: 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'
-        script src: 'js/underscore.js'
-        script src: 'js/json2.js'
-        script src: 'js/backbone.js'
-        script src: 'js/lifemap.js'
-        link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css'
-    body ->
-        @content
+        head -> 
+            title 'Our Life'
+            link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css'
+            link type: 'text/css', href: 'css/moments.css'
+            script src: 'http://maps.google.com/maps/api/js?sensor=false'
+            script src: 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js'
+            script src: 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'
+            script src: 'js/underscore.js'
+            script src: 'js/json2.js'
+            script src: 'js/backbone.js'
+            script src: 'js/lifemap.js'
+        body ->
+            @content
 

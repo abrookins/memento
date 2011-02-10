@@ -48,10 +48,9 @@
             // Set the navigation item.
             var _this = this;
             var now = new Date();
-            var place = this.model.get("place");
             var date = new Date(Date.parse(this.model.get("date")));
-            var position = new google.maps.LatLng(parseFloat(place.point.lat),
-                                                  parseFloat(place.point.lon));
+            var position = new google.maps.LatLng(parseFloat(this.model.get("lat")),
+                                                  parseFloat(this.model.get("lon")));
             // create a marker on the map
             // var icon = new GIcon();
             this.marker = new google.maps.Marker({
@@ -142,9 +141,8 @@
             var id = this.model.get("id"); 
             var description = this.model.get("description");
             var date = new Date(Date.parse(this.model.get("date")));
-            var place = this.model.get("place");
-            var position = new google.maps.LatLng(parseFloat(place.lat),
-                                                  parseFloat(place.lon));
+            var position = new google.maps.LatLng(parseFloat(this.model.get("lat")),
+                                                  parseFloat(this.model.get("lon")));
             var markerYear = date.getFullYear(); // unused?
             var navigation = $("#navigation-items");
             this.item = this.template({"title": title, "id": id});
@@ -290,7 +288,6 @@
                 list: "list",
                 mapFilter: "hidePastFuture",
                 infoWindowMaxWidth: 350,
-                // TODO: 
                 center: new google.maps.LatLng(45.52, -122.68),
                 mapTypeId: google.maps.MapTypeId.TERRAIN,
                 defaultZoomLevel: 10 
@@ -302,7 +299,7 @@
             _.bindAll(this, "addAll", "addOne", "render", "remove");
 
             // Respond to model changes. 
-            this.collection.bind("refresh", this.addAll);
+            //this.collection.bind("refresh", this.addAll);
             //this.collection.bind("add", this.addOne);
 
             this.map = this.initMap();

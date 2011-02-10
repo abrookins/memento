@@ -41,6 +41,7 @@ parser.parse (err, result) ->
             user.save (err) ->
                 counter--
                 if counter == 0
+                    # TODO: import with real map owner.
                     importMap(user)
 
     # Create a Map object to hold the imported locations.
@@ -59,6 +60,7 @@ parser.parse (err, result) ->
             map ?= new Map
                 title: result.title
                 owner: user.username
+            # TODO: Creates two perms. File bug.
             map.permissions.push fullPermissions
             map.save (err) ->
                 importLocations(map, fullPermissions)
@@ -75,4 +77,5 @@ parser.parse (err, result) ->
                 author: entry.author
                 permissions: [permissions]
             map.memories.push(memory)
-            map.save()
+        map.save()
+        console.log "Done importing."

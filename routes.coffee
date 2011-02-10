@@ -1,7 +1,14 @@
 # Routes
+#
+# TIP: Remember to use a hash rocket => when using callbacks 
+# within a route in order to bind values to @ variables.
 
-# Make the hash object available within routes.
+
+# Require and make node_hash available within routes.
 using 'node_hash'
+# TODO: For some reason 'using' doesn't work for this module.
+def models: require './models'
+
 
 get '/': ->
     if session.user
@@ -9,8 +16,10 @@ get '/': ->
     render 'login'
 
 get '/map': ->
-    # TODO: Get places/memory JSON
-    render 'map'
+    models.Map.findOne {title: "Moments"}, (err, map) =>
+        if map
+            @map = map
+            render 'map'
 
 get '/login': ->
     if session.user
@@ -19,9 +28,8 @@ get '/login': ->
     render 'login'
 
 post '/login': ->
-    User = mongoose.model "User"
     render '/login' unless params.username
-    User.findOne {username: params.username}, (err, user) =>
+    models.User.findOne {username: params.username}, (err, user) =>
         found = false
         if err
             console.log "Error", err
@@ -51,7 +59,7 @@ post '/signup': ->
     salted_confirm_password = node_hash.sha1 params.password_confirm, salt
     signup_user = null
     message = null
-    user = new User()
+    user = new models.User()
     user.username = params.username
     user.password = salted_password
     user.email = params.email
@@ -59,13 +67,12 @@ post '/signup': ->
     if salted_password != salted_confirm_password
         message = "Passwords do not match."
     else
-        User.count {$or: [{username: params.username}, {email: params.email}]}, (err, count) =>
+        query = {$or: [{username: params.username}, {email: params.email}]}
+        models.User.count query, (err, count) =>
             if count is 0
-                console.log "saved"
                 user.save()
                 redirect '/map'
             else
-                console.log "not saved"
                 @message = "Username or password already exists."
                 @signup_user = user
                 render 'signup'

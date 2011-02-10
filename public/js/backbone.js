@@ -170,7 +170,7 @@
       if (!options.silent && this.validate && !this._performValidation(attrs, options)) return false;
 
       // Check for changes of `id`.
-      if ('id' in attrs) this.id = attrs.id;
+      if (attrs.hasOwnProperty("id")) this.id = attrs.id;
 
       // Update attributes.
       for (var attr in attrs) {

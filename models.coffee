@@ -6,7 +6,7 @@ ObjectId = Schema.ObjectId
 
 # Permissions
 Permission = new Schema
-    userId: {type: ObjectId, required: yes}
+    userId: {type: ObjectId, required: yes, unique: yes}
     canView: {type: Boolean, default: no}
     canChange: {type: Boolean, default: no}
     canDelete: {type: Boolean, default: no}
@@ -46,4 +46,3 @@ module.exports.User = mongoose.model "User"
 module.exports.Map = mongoose.model "Map"
 module.exports.Memory = mongoose.model "Memory"
 module.exports.Permission = mongoose.model "Permission"
-
