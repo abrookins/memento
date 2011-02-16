@@ -12,64 +12,86 @@
     // Controllers
     var HomeController;
 
-    Memory = Backbone.Model.extend({});
+    Memory = Backbone.Model.extend({
+        escapedJson: function() {
+            return {
+                title: this.escape("title"),
+                author: this.escape("author"),
+                date: this.get("date"),
+                place: this.escape("place"),
+                description: this.escape("description"),
+                _id: this.get("_id")
+            };
+        }
+    });
 
     MemoryList = Backbone.Collection.extend({
-        url: "/api/v1/memories/",
         model: Memory,
     });
 
     MarkerView =  Backbone.View.extend({
         template:  _.template(
-            "<div class='marker-content'>"+
-            "<span class='title'>{{ title }}</span>"+
-            "<div class='marker-description'>{{ description }}</div>"+
-            "<span class='date-header'>Date: </span <span class='date'>{{ date }}</span>"+
+            "<div class='marker-content'>" +
+                "<div class='marker-header'>" + 
+                    "<span class='title'>{{ title }}</span>" +
+                    "<span class='meta'>Added by {{ author }} on {{ date }}</span>" +
+                "</div>" +
+                "<div class='marker-place'><emphasis>{{ place }}</emphasis></div>" +
+                "<div class='marker-description'>{{ description }}</div>" +
+                "<a class='edit-marker' name='edit-marker' href='#markers/marker/edit/{{ _id }}'>Edit</a>" +
             "</div>"
         ),
 
-        events: {
-          "dblclick div.marker-content" : "edit",
-          "click .marker-destroy" : "clear",
-          "click .marker-save" : "save",
-        },
+        editTemplate: _.template(
+            "<div class='marker-edit-form'>" +
+                "<form id='marker-edit'>" +
+                "<input id='title' name='title' type='text' value='{{ title }}' placeholder='Title'>" + 
+                "<input id='place' name='place' type='text' value='{{ place }}' placeholder='Place'>" + 
+                "<textarea id='description-{{ _id }}' name='description' rows=25 cols=45 placeholder='Description'>{{ description }}</textarea>" +
+                "<a class='save-button' name='save-button' href='#markers/marker/save/{{ _id }}'>Save</a>" +
+                "<a class='cancel-button' name='cancel-button' href='#markers/marker/cancel/{{ _id }}'>Cancel</a>" +
+            "</div>"
+        ),
+
+        // Actions that URLs are allowed to trigger.
+        validActions: ['open', 'close', 'save', 'edit', 'cancel', 'toggle'],
 
         initialize: function() {
+            var _this = this;
             this.map = this.options.map;
             this.infoWindow = this.options.infoWindow;
+            this.maxWidth = 350;
+            this.zoomLevel = 12;
+            this.editButton = null;
+            this.editing = null;
+            this.ckeditor = null;
 
-            // Setup events
-            _.bindAll(this, "render", "edit", "open", "remove");
-            this.delegateEvents(this.events);
+            // Bind 'this' to the view in all methods.
+            // TODO: Isn't this only necessary if the method will be used
+            // in an event callback?
+            _.bindAll(this, "render", "edit", "open", "close", "save", "toggle",
+                      "remove", "openInfoWindow", "readOnlyHtml", "editFormHtml",
+                      "handleAction");
+
             this.model.bind('change', this.render);
 
-            // Set the infoWindow text for the marker.              
-            // Set the position of the marker on the map.
-            // Set the navigation item.
-            var _this = this;
             var now = new Date();
             var date = new Date(Date.parse(this.model.get("date")));
             var position = new google.maps.LatLng(parseFloat(this.model.get("lat")),
                                                   parseFloat(this.model.get("lon")));
-            // create a marker on the map
-            // var icon = new GIcon();
+            
+            // Create a new Google Maps marker for this memory.
             this.marker = new google.maps.Marker({
                 position: position,
                 map: this.map,
                 zIndex: this.zIndexByAge
             });
 
-            // Age in days
+            // Age in days. TODO: Used?
             this.marker.age = (now.getTime() - date.getTime()) / 86400000;
 
-            // TODO: Use a template to create the content string, E.G:
-            //$(this.el).html(this.template(this.model.toJSON()));
-            // TODO: Add method to return info window content
-            // TODO: Emit event when marker is clicked on 
-            // TODO: Appview listens for event and does all of this
-
             // Show this marker's content when the user clicks its icon.
-            // TODO: replace with backbone event that AppView listens for
+            // TODO: Appview listens for event and does this?
             google.maps.event.addListener(this.marker, "click", function() {
                 _this.open();
             });
@@ -77,41 +99,144 @@
             return this;
         },
 
-        open: function() {
-            var title = this.model.get("title");
-            var description = this.model.get("description");
-            var date = new Date(Date.parse(this.model.get("date")));
-            var maxWidth = 350; // TODO: belongs elsewhere?
-
-            // This marker's content for the infoWindow.
-            var content = this.template({
-                title: title,
-                description: description,
-                date: date.toDateString()
-            });
-                
-            this.map.panTo(this.marker.getPosition());
-
-            if(this.map.getZoom() < 12) {
-                this.map.setZoom(12);
-            }
-
-            if(/\<img/.test(content)) {
-                // Unset maxWidth value, so window will scale to content size.
-                maxWidth = null
-            }
-
-            // Must close it to set new maxWidth.
+        openInfoWindow: function(content) {
+            var _this = this;
+            var maxWidth = this.maxWidth;
+            var height = null;
+            if(/\<img/.test(content) || this.editing) {
+                maxWidth = null;
+            } 
+            // Google's API requires .close() to set new max-width.
             this.infoWindow.close();
             this.infoWindow.setOptions({
-                maxWidth: maxWidth
+                maxWidth: maxWidth,
             });
             this.infoWindow.setContent(content);
             this.infoWindow.open(this.map, this.marker);
+
+            // When editing a form, add a CKeditor widget; otherwise destroy widget.
+            clear = function() {
+                _this.clearEditor();
+                _this.clearInfoWindowEvents();
+            }
+            if(this.editing === null) {
+                // Clear any lingering events. TODO: should happen when window closes.
+                clear();
+            } else if(this.editing) {
+                google.maps.event.addListener(this.infoWindow, 'domready', function() {
+                    _this.addEditor();
+                });
+            }
+            google.maps.event.addListener(this.infoWindow, 'closeclick', function() {
+                clear();
+            });
+            google.maps.event.addListener(this.infoWindow, 'content_changed', function() {
+                clear();
+            });
+        },
+
+        addEditor: function() {
+            if(!this.ckeditor) {
+                this.ckeditor = CKEDITOR.replace('description-' + this.model.get("_id"), {
+                    toolbar: [['Source', '-', 'Bold', 'Italic', 'Image', 'Link', 'Unlink']]
+                });
+            }
+        },
+
+        clearEditor: function() {
+            if(this.ckeditor) {
+                CKEDITOR.remove(this.ckeditor);
+                this.ckeditor = null;
+            }
+        },
+
+        clearInfoWindowEvents: function() {
+            google.maps.event.clearListeners(this.infoWindow, 'domready');
+            google.maps.event.clearListeners(this.infoWindow, 'content_changed');
+            google.maps.event.clearListeners(this.infoWindow, 'closeclick');
+        },
+
+        // Replace the marker's infoWindow with read-only HTML.
+        readOnlyHtml: function() {
+            return this.template(this.model.toJSON());
+        },
+
+        // Replace the marker's infoWindow with an edit form.
+        editFormHtml: function() {
+            return this.editTemplate(this.model.escapedJson())
+        },
+
+        // Handle an action routed from the controller if the action is valid.
+        handleAction: function(action) {
+            if(typeof(this[action]) == 'function' && _.indexOf(this.validActions, action) !== -1) {
+                this[action]();
+            }
+        },
+
+        // ACTIONS
+       
+        open: function() {
+            var _this = this;
+    
+            // Pan to the marker
+            this.map.panTo(this.marker.getPosition());
+
+            if(this.map.getZoom() < this.zoomLevel) {
+                this.map.setZoom(this.zoomLevel);
+            }
+            
+            this.editing = false;
+            this.openInfoWindow(this.readOnlyHtml());
         },
 
         edit: function() {
-            console.log("called");
+            this.toggle();
+        },
+
+        cancel: function() {
+            this.toggle();
+        },
+
+        close: function() {
+            console.log("Closed");
+        },
+
+        toggle: function() {
+            var content;
+
+            // If the marker has never been opened, redirect and open.
+            if(this.editing == null) {
+                window.location = "#markers/marker/open/" + this.model.get("_id");
+                return;
+            }
+            if(this.editing) {
+                content = this.readOnlyHtml();
+                this.editing = false;
+            } else {
+                content = this.editFormHtml();
+                this.editing = true;
+            }
+
+            $(this.el).html(content);
+            this.openInfoWindow(content);
+        },
+
+        save: function() {
+            // This won't work if we aren't on an edit form.
+            if(!this.editing) {
+                return;
+            }
+            title = $("#title").val();
+            place = $("#place").val();
+            description = this.ckeditor.getData();
+            console.log(description);
+            this.model.set({
+                title: title,
+                place: place,
+                description: description
+            });
+            this.model.save();
+            this.toggle();
         },
 
         remove: function() {
@@ -123,7 +248,7 @@
     });
 
     NavigationItemView =  Backbone.View.extend({
-        template: _.template("<li><a href='#markers/marker/{{ id }}'>{{ title }}</a></li>"),
+        template: _.template("<li><a href='#markers/marker/open/{{ id }}'>{{ title }}</a></li>"),
 
         initialize: function() {
             _.bindAll(this, 'render');
@@ -132,20 +257,16 @@
     
         render: function() {
             // Add item to list of markers in sidebar
-            // TODO: This should be a sortable list in a hierarchy, default to sort 
-            // by year and month.
-            // TODO: Server should return them sorted by date. 
-            // TODO: Rendering should either create a new el or modify existing.
             var _this = this;
-            var title = this.model.get("title");
-            var id = this.model.get("id"); 
-            var description = this.model.get("description");
-            var date = new Date(Date.parse(this.model.get("date")));
-            var position = new google.maps.LatLng(parseFloat(this.model.get("lat")),
-                                                  parseFloat(this.model.get("lon")));
-            var markerYear = date.getFullYear(); // unused?
+            // First remove it if it already exists
+            if(this.item) {
+                this.remove();
+            }
+            var date = new Date(Date.parse(this.model.get("date"))); // unused
+            var markerYear = date.getFullYear(); // unused
             var navigation = $("#navigation-items");
-            this.item = this.template({"title": title, "id": id});
+            this.item = this.template({"title": this.model.get("title"),
+                                      "id": this.model.get("_id")});
             this.item = $(this.item).appendTo(navigation);
         },
 
@@ -190,59 +311,63 @@
 
         render: function() {
             var _this = this;
-            var timeline = $("#timeline");
-            var yearSelect = $("#"+this.selectId);
-            var monthSelect = $("#month");
-            var option = yearSelect.children("option:selected");
-            var year = this.getSelectedYear();
 
             if(!this.slider) {
-                var numberOfNonMonthOptions = 1;
-                var numberOfOptions = yearSelect.children("option").size();
-                var multiplier = numberOfOptions - numberOfNonMonthOptions;
-                                                  ;
-                this.slider = $(timeline).slider({
-                    min: 1,
-                    max: 12 * multiplier + numberOfNonMonthOptions,
-                    value: yearSelect[0].selectedIndex + 1,
-                    slide: function(event, ui) {
-                        selectedYear = null;
-                        selectedMonth = null;
-                        if(ui.value <= numberOfNonMonthOptions) {
-                            // Non-year options
-                            selectedYear = ui.value;
-                            selectedMonth = ui.value;
-                        } else if(ui.value <= 12 + numberOfNonMonthOptions) {
-                            // First year, so figure month
-                            selectedYear = numberOfNonMonthOptions + 1;
-                            selectedMonth = ui.value;
-                        } else {
-                            // Any year after the first: figure year and month
-                            selectedYear = Math.ceil((ui.value - numberOfNonMonthOptions) / 12) + numberOfNonMonthOptions;
-                            selectedMonth = ui.value - ((selectedYear - ( numberOfNonMonthOptions + 1)) * 12);
-                        }
-                        yearSelect[0].selectedIndex = selectedYear - 1;
-                        monthSelect[0].selectedIndex = selectedMonth - 1;
-                        _this.yearChanged();
-                    }
-                });
-
-                yearSelect.change(function() {
-                    var option = yearSelect.children("option:selected");
-                    _this.slider.slider("value", option.index()+1);
-                    _this.yearChanged(); // TODO: Why called multiple times?
-                });
+                this.renderSlider();
             }
 
             // Remove elements if they already exist.  
             this.remove();
 
             // Add subviews for all visible models.
-            this.addAll(year);
+            this.addAll(this.getSelectedYear());
         
             // Render all subviews
             $.each(this.itemViews, function() {
                 this.render();   
+            });
+        },
+
+        renderSlider: function() {
+            var _this = this;
+            var timeline = $("#timeline");
+            var yearSelect = $("#"+this.selectId);
+            var monthSelect = $("#month");
+            var option = yearSelect.children("option:selected");
+            var numberOfNonMonthOptions = 1;
+            var numberOfOptions = yearSelect.children("option").size();
+            var multiplier = numberOfOptions - numberOfNonMonthOptions;
+
+            this.slider = $(timeline).slider({
+                min: 1,
+                max: 12 * multiplier + numberOfNonMonthOptions,
+                value: yearSelect[0].selectedIndex + 1,
+                slide: function(event, ui) {
+                    selectedYear = null;
+                    selectedMonth = null;
+                    if(ui.value <= numberOfNonMonthOptions) {
+                        // Non-year options
+                        selectedYear = ui.value;
+                        selectedMonth = ui.value;
+                    } else if(ui.value <= 12 + numberOfNonMonthOptions) {
+                        // First year, so figure month
+                        selectedYear = numberOfNonMonthOptions + 1;
+                        selectedMonth = ui.value;
+                    } else {
+                        // Any year after the first: figure year and month
+                        selectedYear = Math.ceil((ui.value - numberOfNonMonthOptions) / 12) + numberOfNonMonthOptions;
+                        selectedMonth = ui.value - ((selectedYear - ( numberOfNonMonthOptions + 1)) * 12);
+                    }
+                    yearSelect[0].selectedIndex = selectedYear - 1;
+                    monthSelect[0].selectedIndex = selectedMonth - 1;
+                    _this.yearChanged();
+                }
+            });
+
+            yearSelect.change(function() {
+                var option = yearSelect.children("option:selected");
+                _this.slider.slider("value", option.index()+1);
+                _this.yearChanged(); // TODO: Why called multiple times?
             });
         },
 
@@ -306,12 +431,12 @@
             this.infoWindow = this.initInfoWindow();
         },
 
-        openMarker: function(id) {
+        sendActionToMarker: function(action, id) {
             var marker = _.select(this.markerViews, function(view) {
-                return view.model.get("id") == id;
+                return view.model.get("_id") == id;
             })[0];
             if(marker) {
-                marker.open();
+                marker.handleAction(action);
             }
         },
 
@@ -382,12 +507,12 @@
 
     HomeController = Backbone.Controller.extend({
         routes: {
-            "markers/marker/:id": "openMarker",
+            "markers/marker/:action/:id": "sendActionToMarker",
         },
 
         initialize: function(options) {
-            _.bindAll(this, "refresh", "openMarker", "filterMarkers");
-            this.memories = new MemoryList();
+            _.bindAll(this, "refresh", "sendActionToMarker", "filterMarkers");
+            this.memories = options.memories;
 
             this.appView = new AppView({
                 collection: this.memories
@@ -401,8 +526,8 @@
             this.memories.bind("refresh", this.filterMarkers);
         },
 
-        openMarker: function(id) {
-            this.appView.openMarker(id);
+        sendActionToMarker: function(action, id) {
+            this.appView.sendActionToMarker(action, id);
         },
 
         filterMarkers: function(year) {
@@ -415,4 +540,5 @@
     });
         
     window.HomeController = HomeController;
+    window.MemoryList = MemoryList;
 })();

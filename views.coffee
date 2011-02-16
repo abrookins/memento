@@ -32,7 +32,7 @@ view signup: ->
         button "Submit"
 
 view map: ->
-    memoryJson = (memory.toJSON() for memory in @map.memories)
+    memoryJson = (memory.toJSON() for memory in @memories)
     # TODO: Generate years with list comprehension in view.
     div id: 'lifemap', ->
         div id: 'navigation-container', ->
@@ -43,12 +43,23 @@ view map: ->
                         form id: 'timeline-select', ->
                             label for: 'year', -> "Year"
                             select id: 'year', name: 'year', ->
-                                option 2006
-                                option 2007
-                                option 2008
-                                option 2009
-                                option 2010
-                                option 2011
+                                option 'Any'
+                                option year for year in @years
+                            label for: 'month', -> 'Month'
+                            select id: 'month', name: 'month', ->
+                                option 'Any'
+                                option 'January'
+                                option 'February'
+                                option 'March'
+                                option 'April'
+                                option 'May'
+                                option 'June'
+                                option 'July'
+                                option 'August'
+                                option 'September'
+                                option 'October'
+                                option 'November'
+                                option 'December'
                 ul id: 'navigation-items'
         div id: 'content', ->
             div id: 'mapcontainer', ->
@@ -56,8 +67,12 @@ view map: ->
     script """
         (function($) { 
             $(window).load(function() {
-                var hc = new HomeController();
-                hc.refresh([#{memoryJson}]);
+                var memories = new MemoryList();
+                memories.url = "/api/v1/map/#{@mapId}";
+                var hc = new HomeController({
+                    memories: memories
+                });
+                memories.refresh([#{memoryJson}]);
                 Backbone.history.start();
             });
         })(jQuery);
@@ -66,15 +81,16 @@ layout ->
     html ->
         head -> 
             title 'Our Life'
-            link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css'
-            link type: 'text/css', href: 'css/moments.css'
-            script src: 'http://maps.google.com/maps/api/js?sensor=false'
-            script src: 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js'
-            script src: 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'
-            script src: 'js/underscore.js'
-            script src: 'js/json2.js'
-            script src: 'js/backbone.js'
-            script src: 'js/lifemap.js'
+            link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css', rel: 'stylesheet'
+            link type: 'text/css', href: 'css/moments.css', rel: 'stylesheet'
+            script type: "text/javascript", src: 'http://maps.google.com/maps/api/js?sensor=false'
+            script type: "text/javascript", src: 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js'
+            script type: "text/javascript", src: 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'
+            script type: "text/javascript", src: 'js/ckeditor/ckeditor.js'
+            script type: "text/javascript", src: 'js/underscore.js'
+            script type: "text/javascript", src: 'js/json2.js'
+            script type: "text/javascript", src: 'js/backbone.js'
+            script type: "text/javascript", src: 'js/lifemap.js'
         body ->
             @content
 

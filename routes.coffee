@@ -4,11 +4,11 @@
 # within a route in order to bind values to @ variables.
 
 
-# Require and make node_hash available within routes.
+# These modules will be available within routes.
 using 'node_hash'
-# TODO: For some reason 'using' doesn't work for this module.
+# TODO: 'using' doesn't always work:
 def models: require './models'
-
+def _ : require 'underscore'
 
 get '/': ->
     if session.user
@@ -16,10 +16,28 @@ get '/': ->
     render 'login'
 
 get '/map': ->
+    @years = []
+    # TODO: fix this map lookup stub.
     models.Map.findOne {title: "Moments"}, (err, map) =>
         if map
-            @map = map
-            render 'map'
+            models.Memory.find {map: map._id}, (err, memories) =>
+                @mapId = map._id
+                @years = _.uniq(m.date.getFullYear() for m in memories)
+                @memories = memories
+                render 'map'
+
+post '/api/v1/map/:mapId': ->
+    if @mapId and params._id
+        models.Memory.findOne {map: @mapId, _id: params._id}, (err, memory) =>
+            if err
+                console.log err.stack
+                return
+            for field, value of params
+                skip = ['_id', 'mapId', 'permissions'] # TODO: why permissions fail?
+                memory[field] = value if field not in skip and value isnt undefined
+            memory.save (err) ->
+                if err
+                    console.log err.stack
 
 get '/login': ->
     if session.user

@@ -6,7 +6,7 @@ ObjectId = Schema.ObjectId
 
 # Permissions
 Permission = new Schema
-    userId: {type: ObjectId, required: yes, unique: yes}
+    user: ObjectId
     canView: {type: Boolean, default: no}
     canChange: {type: Boolean, default: no}
     canDelete: {type: Boolean, default: no}
@@ -21,14 +21,16 @@ Memory = new Schema
     date: Date
     date_added: { type: Date, default: Date.now }
     date_modified: { type: Date, default: Date.now }
-    author: String # Sucks to change, but noSQL?
     permissions: [Permission]
+    author: String # For display
+    owner: ObjectId
+    map: ObjectId
 mongoose.model "Memory", Memory
 
 Map = new Schema
-    title: String # TODO: Unique
-    owner: String # Username
-    memories: [Memory]
+    title: String 
+    author: String # Only for display
+    owner: ObjectId # User
     permissions: [Permission]
 mongoose.model "Map", Map
 

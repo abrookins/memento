@@ -41,15 +41,14 @@ parser.parse (err, result) ->
             user.save (err) ->
                 counter--
                 if counter == 0
-                    # TODO: import with real map owner.
                     importMap(user)
 
     # Create a Map object to hold the imported locations.
     importMap = (user) ->
         # Look for a map with the feed's title, owned by this user.
-        Map.findOne {owner: user.username, title: result.title}, (err, map) ->
+        Map.findOne {owner: user._id, title: result.title}, (err, map) ->
             fullPermissions =
-                userId: user._id
+                user: user._id
                 canView: yes
                 canChange: yes
                 canDelete: yes
@@ -59,23 +58,30 @@ parser.parse (err, result) ->
             # If a map doesn't already exist with the title, create one.
             map ?= new Map
                 title: result.title
-                owner: user.username
+                owner: user._id
+                author: user.username
             # TODO: Creates two perms. File bug.
             map.permissions.push fullPermissions
             map.save (err) ->
-                importLocations(map, fullPermissions)
+                if err
+                    console.log err
+                    return
+                importLocations(map, user, fullPermissions)
 
     # Import Google Maps locations as memories.
-    importLocations = (map, permissions) ->
+    importLocations = (map, user, permissions) ->
         for entry in result.entries
-            memory =
+            memory = new Memory
+                map: map._id
                 title: entry.title
                 description: entry.description
                 lat: entry.point.lat
                 lon: entry.point.lon
                 date: entry.date
                 author: entry.author
+                owner: user._id
                 permissions: [permissions]
-            map.memories.push(memory)
-        map.save()
+            memory.save (err) ->
+                if err
+                    console.log "supposedly an error ", err
         console.log "Done importing."
