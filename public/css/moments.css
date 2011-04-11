@@ -1,3 +1,25 @@
+/* http://www.colourlovers.com/palette/731302/pablo_neruda
+*/
+
+body {
+    font-family: Helvetica, Arial, Verdana, sans-serif;
+    margin: 0px;
+    color: #353634;
+}
+
+h1, h2, h3, h4, h5 {
+    color: #2B2B2B;
+    font-family: Georgia, Serif;
+    padding-left: 10px;
+}
+
+h3 {
+}
+
+a, a:visited {
+    color: #2B2B2B;
+}
+
 div, p {
     font-family: Verdana, Arial, sans-serif;
     font-size: 12px;
@@ -14,21 +36,48 @@ div#help {
     padding: 1em;
 }
 
+div#lifemap {
+}
+
+h2#navigation-header {
+    padding: 0 10px 0 10px;
+}
+
 div#navigation-container {
     float: left;
+    height: 100%;
     width: 300px;
     overflow: inherit;
+    background: #F2E3C6;
+    border: 1px solid white;
+}
+
+div#navigation {
+    overflow-y: scroll;
+    height: 100%;
+    /*
+    border-top: 2px solid #FFC6A5;
+    border-bottom: 2px solid #FFC6A5;*/
+}
+
+div#navigation ul {
+    list-style: none;
+    padding: 0px;
+}
+
+div#navigation ul li {
+    border-bottom: 1px solid #FFC6A5;
+}
+
+
+div#navigation ul li p {
+    padding: 10px;
 }
 
 div#content {
     width: auto;
     height: auto;
     overflow: hidden;
-}
-
-div#timemap {
-    padding: 1em;
-    overflow: scroll;
 }
 
 form#timeline-select {
@@ -47,9 +96,9 @@ div#timeline-container {
     margin-bottom: 45px;
 }
 
-div#map {
+div#map {/*
     position: relative;
-    width: 100%;
+    width: 100%;*/
     height: 100%; 
     background: #EEEEEE;
 }
@@ -71,9 +120,6 @@ div.custominfostyle {
 }
 
 div#mapcontainer {
-    width: 1106px;
-    height: 100%;
-    float:right;
 }
 
 div[name="events"] {
@@ -117,6 +163,7 @@ div.marker-header span.title {
 
 div.marker-description img {
     float: left;
+    padding: 10px;
 }
 
 div.marker-description {
@@ -130,6 +177,3 @@ div.marker-description > p {
 
 div.marker-content span.meta {
 }
-
-/*.info { width: 250px; } */
-

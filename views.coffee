@@ -35,9 +35,9 @@ view map: ->
     memoryJson = (memory.toJSON() for memory in @memories)
     # TODO: Generate years with list comprehension in view.
     div id: 'lifemap', ->
-        div id: 'navigation-container', ->
-            h1 id: 'navigation-header', -> "Moments"
-            div id: 'navigation', ->
+        div id: 'content', ->
+            div id: 'navigation-container', ->
+                h1 id: 'navigation-header', -> "Moments"
                 div id: 'timeline-container', ->
                     div id: 'timeline', ->
                         form id: 'timeline-select', ->
@@ -60,12 +60,17 @@ view map: ->
                                 option 'October'
                                 option 'November'
                                 option 'December'
-                ul id: 'navigation-items'
-        div id: 'content', ->
+                div id: 'navigation', ->
+                    ul id: 'navigation-items'
             div id: 'mapcontainer', ->
                 div id: 'map'
     script """
         (function($) { 
+            function resizeNav() {
+                // Size the navigation to the map.
+                var mapHeight = $("#mapcontainer").height();
+                $("#navigation-container").css("height", mapHeight-2); // 1px border
+            }
             $(window).load(function() {
                 var memories = new MemoryList();
                 memories.url = "/api/v1/map/#{@mapId}";
@@ -74,6 +79,11 @@ view map: ->
                 });
                 memories.refresh([#{memoryJson}]);
                 Backbone.history.start();
+    
+                resizeNav();
+            });
+            $(window).resize(function() {
+                resizeNav();
             });
         })(jQuery);
         """

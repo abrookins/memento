@@ -3,7 +3,7 @@ request = require 'request'
 sys = require 'sys'
 xml2js = require 'xml2js-expat'
 
-class Parser 
+class Parser
     constructor: (@url) ->
    
     # Retrieve the georss/XML feed from Google, parse it into JSON.
@@ -39,5 +39,5 @@ class Parser
                 entries: entries
             callback null, parsedResult
     
-#Adapter for Google Maps My Places RSS feed.
-module.exports.Parser = Parser 
+# Adapter for Google Maps My Places RSS feed.
+module.exports.Parser = Parser

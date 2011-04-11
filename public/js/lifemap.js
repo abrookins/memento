@@ -22,11 +22,18 @@
                 description: this.escape("description"),
                 _id: this.get("_id")
             };
-        }
+        },
+
+        // Strip a field of its HTML content and return.
+        getSafe: function(fieldName) {
+            var tmp = document.createElement("DIV");
+            tmp.innerHTML = this.get(fieldName);
+            return tmp.textContent||tmp.innerText;
+        },
     });
 
     MemoryList = Backbone.Collection.extend({
-        model: Memory,
+        model: Memory
     });
 
     MarkerView =  Backbone.View.extend({
@@ -109,7 +116,7 @@
             // Google's API requires .close() to set new max-width.
             this.infoWindow.close();
             this.infoWindow.setOptions({
-                maxWidth: maxWidth,
+                maxWidth: maxWidth
             });
             this.infoWindow.setContent(content);
             this.infoWindow.open(this.map, this.marker);
@@ -163,7 +170,7 @@
 
         // Replace the marker's infoWindow with an edit form.
         editFormHtml: function() {
-            return this.editTemplate(this.model.escapedJson())
+            return this.editTemplate(this.model.escapedJson());
         },
 
         // Handle an action routed from the controller if the action is valid.
@@ -248,7 +255,7 @@
     });
 
     NavigationItemView =  Backbone.View.extend({
-        template: _.template("<li><a href='#markers/marker/open/{{ id }}'>{{ title }}</a></li>"),
+        template: _.template("<li><h3><a href='#markers/marker/open/{{ id }}'>{{ title }}</a></h4><p>{{ description }}</p></li>"),
 
         initialize: function() {
             _.bindAll(this, 'render');
@@ -258,6 +265,12 @@
         render: function() {
             // Add item to list of markers in sidebar
             var _this = this;
+            // Maximum length of description shown in navigation item.
+            var maxDescLength = 100;
+            var addEllipses = false;
+            var sliceEnd = maxDescLength;
+            var shortDescription;
+
             // First remove it if it already exists
             if(this.item) {
                 this.remove();
@@ -265,8 +278,18 @@
             var date = new Date(Date.parse(this.model.get("date"))); // unused
             var markerYear = date.getFullYear(); // unused
             var navigation = $("#navigation-items");
+            var description = this.model.getSafe("description");
+
+            // Portion of the description to show in the navigation item.
+            if(description.length <= maxDescLength) {
+                shortDescription = description;
+            } else {
+                shortDescription = description.slice(0, maxDescLength) + " ...";
+            }
+
             this.item = this.template({"title": this.model.get("title"),
-                                      "id": this.model.get("_id")});
+                                      "id": this.model.get("_id"),
+                                      "description": shortDescription});
             this.item = $(this.item).appendTo(navigation);
         },
 
@@ -333,40 +356,10 @@
             var timeline = $("#timeline");
             var yearSelect = $("#"+this.selectId);
             var monthSelect = $("#month");
-            var option = yearSelect.children("option:selected");
-            var numberOfNonMonthOptions = 1;
-            var numberOfOptions = yearSelect.children("option").size();
-            var multiplier = numberOfOptions - numberOfNonMonthOptions;
-
-            this.slider = $(timeline).slider({
-                min: 1,
-                max: 12 * multiplier + numberOfNonMonthOptions,
-                value: yearSelect[0].selectedIndex + 1,
-                slide: function(event, ui) {
-                    selectedYear = null;
-                    selectedMonth = null;
-                    if(ui.value <= numberOfNonMonthOptions) {
-                        // Non-year options
-                        selectedYear = ui.value;
-                        selectedMonth = ui.value;
-                    } else if(ui.value <= 12 + numberOfNonMonthOptions) {
-                        // First year, so figure month
-                        selectedYear = numberOfNonMonthOptions + 1;
-                        selectedMonth = ui.value;
-                    } else {
-                        // Any year after the first: figure year and month
-                        selectedYear = Math.ceil((ui.value - numberOfNonMonthOptions) / 12) + numberOfNonMonthOptions;
-                        selectedMonth = ui.value - ((selectedYear - ( numberOfNonMonthOptions + 1)) * 12);
-                    }
-                    yearSelect[0].selectedIndex = selectedYear - 1;
-                    monthSelect[0].selectedIndex = selectedMonth - 1;
-                    _this.yearChanged();
-                }
-            });
 
             yearSelect.change(function() {
                 var option = yearSelect.children("option:selected");
-                _this.slider.slider("value", option.index()+1);
+                //_this.slider.slider("value", option.index()+1);
                 _this.yearChanged(); // TODO: Why called multiple times?
             });
         },
@@ -390,7 +383,7 @@
             var year = this.getSelectedYear();
 
             // Notify watchers of the current years and render subviews.
-            if(this.year == undefined || this.year != year) {
+            if(this.year === undefined || this.year != year) {
                 this.year = year;
                 this.render();
                 this.trigger("nav:yearChanged", year);
@@ -444,7 +437,13 @@
             var mapOptions = {
                 zoom: this.options.defaultZoomLevel,
                 center: this.options.center,
-                mapTypeId: this.options.mapTypeId
+                mapTypeId: this.options.mapTypeId,
+                panControlOptions: {
+                    position: google.maps.ControlPosition.RIGHT_TOP
+                },
+                zoomControlOptions: {
+                    position: google.maps.ControlPosition.RIGHT_TOP
+                }
             }
 
             // TODO: Add map events, if any
@@ -507,7 +506,7 @@
 
     HomeController = Backbone.Controller.extend({
         routes: {
-            "markers/marker/:action/:id": "sendActionToMarker",
+            "markers/marker/:action/:id": "sendActionToMarker"
         },
 
         initialize: function(options) {
@@ -536,7 +535,11 @@
 
         refresh: function(newMemories) {
             this.memories.refresh(newMemories);
-        }
+        },
+        
+        getMapDiv: function() {
+            return this.appView.map.getDiv();
+        },
     });
         
     window.HomeController = HomeController;
