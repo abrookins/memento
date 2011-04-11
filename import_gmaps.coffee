@@ -1,7 +1,4 @@
-# Import Google maps from a URL for a specified user.
-#
-# Example URL:
-# "http://maps.google.com/maps/ms?hl=en&gl=us&ie=UTF8&view=map&vps=1&jsv=298d&msa=0&output=georss&msid=116339465326062674750.00049598cedb49f5bd92f"
+# Import My Places Google maps RSS feed from a URL for a specified user.
 
 Parser = require('./googlemapsrss').Parser
 User = require('./models').User
