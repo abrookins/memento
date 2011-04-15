@@ -89,7 +89,7 @@ view map: ->
         """
 layout ->
     html ->
-        head -> 
+        head ->
             title 'Our Life'
             link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css', rel: 'stylesheet'
             link type: 'text/css', href: 'css/moments.css', rel: 'stylesheet'
@@ -100,7 +100,7 @@ layout ->
             script type: "text/javascript", src: 'js/underscore.js'
             script type: "text/javascript", src: 'js/json2.js'
             script type: "text/javascript", src: 'js/backbone.js'
-            script type: "text/javascript", src: 'js/lifemap.js'
+            script type: "text/javascript", src: '/map.js'
         body ->
             @content
 

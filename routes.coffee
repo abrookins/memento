@@ -94,4 +94,3 @@ post '/signup': ->
                 @message = "Username or password already exists."
                 @signup_user = user
                 render 'signup'
-
