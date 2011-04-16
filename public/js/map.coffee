@@ -204,7 +204,6 @@ class MarkerView extends Backbone.View
         title = $("#title").val()
         place = $("#place").val()
         description = @ckeditor.getData()
-        console.log description
         @model.set
             title: title,
             place: place,
@@ -232,10 +231,10 @@ class NavigationItemView extends Backbone.View
 
     render: ->
         # Add item to list of markers in sidebar
-        maxDescLength = 100
+        maxDescLength = 150
         addEllipses = false
         sliceEnd = maxDescLength
-        shortDescription
+        shortDescription = ""
 
         # First remove it if it already exists
         if @item?
