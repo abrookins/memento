@@ -100,7 +100,7 @@ layout ->
             script type: "text/javascript", src: 'js/underscore.js'
             script type: "text/javascript", src: 'js/json2.js'
             script type: "text/javascript", src: 'js/backbone.js'
-            script type: "text/javascript", src: '/map.js'
+            script type: "text/javascript", src: 'js/map.js'
         body ->
             @content
 

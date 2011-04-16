@@ -1,10 +1,12 @@
-# Import My Places Google maps RSS feed from a URL for a specified user.
+"""
+Import My Places Google maps RSS feed from a URL for a specified user.
+"""
 
 Parser = require('./googlemapsrss').Parser
-User = require('./models').User
-Map = require('./models').Map
-Memory = require('./models').Memory
+{User, Map, Memory} = require('./models')
 _ = require('underscore')
+
+# Import optimist and setup command line arguments.
 argv = require('optimist')
     .demand(['u', 'n'])
     .usage('Usage: -u [Google maps url] -n [username to import into]')
@@ -18,7 +20,6 @@ parser = new Parser url
 parser.parse (err, result) ->
     # Unique users in the result set
     users = []
-
     if err
         console.log err.stack
         return
@@ -57,7 +58,7 @@ parser.parse (err, result) ->
                 title: result.title
                 owner: user._id
                 author: user.username
-            # TODO: Creates two perms. File bug.
+            # TODO: Creates two perms? File bug.
             map.permissions.push fullPermissions
             map.save (err) ->
                 if err
@@ -80,5 +81,5 @@ parser.parse (err, result) ->
                 permissions: [permissions]
             memory.save (err) ->
                 if err
-                    console.log "supposedly an error ", err
+                    console.log "Error: ", err
         console.log "Done importing."
