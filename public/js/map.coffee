@@ -229,27 +229,25 @@ class NavigationItemView extends Backbone.View
         _.bindAll @, 'render'
         @model.bind 'change', @render
 
+    # Add item to list of markers in sidebar
     render: ->
-        # Add item to list of markers in sidebar
         maxDescLength = 150
-        addEllipses = false
         sliceEnd = maxDescLength
+        date = @model.getDate()
+        markerYear = date.getFullYear() # unused
+        navigation = $("#navigation-items")
+        description = @model.getSafe "description"
         shortDescription = ""
 
         # First remove it if it already exists
         if @item?
             @remove()
 
-        date = @model.getDate()
-        markerYear = date.getFullYear() # unused
-        navigation = $("#navigation-items")
-        description = @model.getSafe "description"
-
         # Portion of the description to show in the navigation item.
         if description.length <= maxDescLength
             shortDescription = description
         else
-            shortDescription = description.slice 0, maxDescLength + " ..."
+            shortDescription = description.slice(0, maxDescLength) + " ..."
 
         @item = @template
             "title": @model.get "title"
