@@ -108,7 +108,7 @@ class MarkerView extends Backbone.View
     openInfoWindow: (content) ->
         maxWidth = @maxWidth
         height = null
-        if /\<img/.test content or @editing
+        if @editing or /\<img/.test content
             maxWidth = null
 
         # Google's API requires .close() to set new max-width.
@@ -123,18 +123,18 @@ class MarkerView extends Backbone.View
             @clearEditor()
             @clearInfoWindowEvents()
 
-        if @editing?
+        if @editing
             # Attach a WYSIWYG editor when the infoWidnow opens.
             google.maps.event.addListener @infoWindow, 'domready', => @addEditor()
-        else :
+        else
             # Clear any lingering events. TODO: should happen when window closes.
             clear()
 
         google.maps.event.addListener @infoWindow, 'closeclick', -> clear()
-
         google.maps.event.addListener @infoWindow, 'content_changed', -> clear()
 
     addEditor: ->
+        console.log "adding editor...", @ckeditor
         if not @ckeditor?
             @ckeditor = CKEDITOR.replace 'description-' + @model.get("_id"),
                 toolbar: [['Source', '-', 'Bold', 'Italic', 'Image', 'Link', 'Unlink']]
@@ -159,8 +159,8 @@ class MarkerView extends Backbone.View
 
     handleAction: (action) ->
         # Handle an action routed from the controller if the action is valid.
-        if typeof this[action] is 'function' and _.indexOf @validActions, action isnt -1
-            this[action]()
+        if typeof @[action] is 'function' and _.indexOf @validActions, action isnt -1
+            @[action]()
 
     # ACTIONS
    
@@ -184,10 +184,10 @@ class MarkerView extends Backbone.View
     toggle: ->
         content = null
         # If the marker has never been opened, redirect and open.
-        if @editing is null
+        if not @editing?
             window.location = "#markers/marker/open/" + @model.get("_id")
             return
-        if @editing?
+        if @editing
             content = @readOnlyHtml()
             @editing = false
         else
@@ -262,6 +262,7 @@ class NavigationView extends Backbone.View
     initialize: ->
         @itemViews= []
         @selectId = @options.selectId || "year"
+        @year = @getSelectedYear()
 
         _.bindAll @, 'render', 'addOne', 'addAll', 'remove', 'getSelectedYear'
 
@@ -290,11 +291,12 @@ class NavigationView extends Backbone.View
         @remove()
 
         # Add subviews for all visible models.
-        @addAll @getSelectedYear()
+        @addAll @year
     
         # Render all subviews
         $.each @itemViews, -> @render()
 
+    # TODO: Need a different name
     renderSlider: ->
         timeline = $("#timeline")
         yearSelect = $("#"+@selectId)
@@ -308,7 +310,7 @@ class NavigationView extends Backbone.View
     remove: ->
         if @itemViews
             # Rmove all subviews
-            $.each @itemViews, => @remove()
+            $.each @itemViews, -> @remove()
             @itemViews = []
 
     getSelectedYear: ->
