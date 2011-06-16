@@ -99,16 +99,16 @@ layout ->
     html ->
         head ->
             title 'Our Life'
-            link type: 'text/css', href: 'css/Aristo/jquery-ui-1.8.5.custom.css', rel: 'stylesheet'
-            link type: 'text/css', href: 'css/moments.css', rel: 'stylesheet'
+            link type: 'text/css', href: '/css/Aristo/jquery-ui-1.8.5.custom.css', rel: 'stylesheet'
+            link type: 'text/css', href: '/css/moments.css', rel: 'stylesheet'
             script type: "text/javascript", src: 'http://maps.google.com/maps/api/js?sensor=false'
             script type: "text/javascript", src: 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js'
             script type: "text/javascript", src: 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'
-            script type: "text/javascript", src: 'js/ckeditor/ckeditor.js'
-            script type: "text/javascript", src: 'js/underscore.js'
-            script type: "text/javascript", src: 'js/json2.js'
-            script type: "text/javascript", src: 'js/backbone.js'
-            script type: "text/javascript", src: 'js/map.js'
+            script type: "text/javascript", src: '/js/ckeditor/ckeditor.js'
+            script type: "text/javascript", src: '/js/underscore.js'
+            script type: "text/javascript", src: '/js/json2.js'
+            script type: "text/javascript", src: '/js/backbone.js'
+            script type: "text/javascript", src: '/js/map.js'
         body ->
             @content
 
