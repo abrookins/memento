@@ -2,7 +2,7 @@
 
 view index: ->
     h1 'Blah'
-    p 'Your mom. Word.'
+    p 'Welcome to Memento.'
     @message
 
 view login: ->
@@ -30,6 +30,14 @@ view signup: ->
             input id: 'password_confirm', name: 'password_confirm', type: 'password', placeholder: "Confirm password"
             input id: 'email', name: 'email', type: 'text', placeholder: "Email"
         button "Submit"
+
+view dashboard: ->
+    h1 "Dashboard"
+    if @maps?
+        h3 'Your maps:'
+        ul ->
+            for map in @maps
+                li -> a href: "/maps/map/" + map._id, -> map.title
 
 view map: ->
     memoryJson = (memory.toJSON() for memory in @memories)

@@ -5,7 +5,7 @@ it by the server.
 It uses Backbone.js to separate concerns betwen models, views and
 controllers. Models are RESTful wrappers around server-side objects
 persisted in MongoDB (at this time), and can POST back changes the
-user makes to their content.
+user makes to his or her content.
 ###
 
 # Use Django-style HTML templating with Underscore.
@@ -298,7 +298,6 @@ class NavigationView extends Backbone.View
 
     # TODO: Need a different name
     renderSlider: ->
-        timeline = $("#timeline")
         yearSelect = $("#"+@selectId)
         monthSelect = $("#month")
 
@@ -329,17 +328,11 @@ class NavigationView extends Backbone.View
 class AppView extends Backbone.View
     initialize: ->
         @map = null
-        @timeline = null
-        @eventSource = null
-        @bandInfos = null
-        @resizeTimerID = null
         @markerViews = []
         @navigationViews = []
 
         defaults =
             mapId: "map"
-            list: "list"
-            mapFilter: "hidePastFuture"
             infoWindowMaxWidth: 350
             center: new google.maps.LatLng(45.52, -122.68)
             mapTypeId: google.maps.MapTypeId.TERRAIN
@@ -349,10 +342,6 @@ class AppView extends Backbone.View
 
         # Bind 'this' to this object in event callbacks.
         _.bindAll @, "addAll", "addOne", "render", "remove"
-
-        # Respond to model changes. 
-        #@collection.bind "refresh", @addAll
-        #@collection.bind "add", @addOne
 
         @map = @initMap()
         @infoWindow = @initInfoWindow()

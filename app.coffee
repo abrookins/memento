@@ -1,5 +1,5 @@
 # MEMENTO 
 
-include 'client.coffee'
+include 'models.coffee'
 include 'routes.coffee'
 include 'views.coffee'

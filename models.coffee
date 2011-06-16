@@ -4,13 +4,11 @@ db = mongoose.connect 'mongodb://localhost/memento'
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
-# Permissions
 Permission = new Schema
     user: ObjectId
     canView: {type: Boolean, default: no}
     canChange: {type: Boolean, default: no}
     canDelete: {type: Boolean, default: no}
-mongoose.model "Permission", Permission
 
 Memory = new Schema
     title: String
@@ -25,14 +23,12 @@ Memory = new Schema
     author: String # For display
     owner: ObjectId
     map: ObjectId
-mongoose.model "Memory", Memory
 
 Map = new Schema
-    title: String 
+    title: String
     author: String # Only for display
     owner: ObjectId # User
     permissions: [Permission]
-mongoose.model "Map", Map
 
 User = new Schema
     admin: Boolean
@@ -41,7 +37,12 @@ User = new Schema
     password: String
     date_added: { type: Date, default: Date.now }
     date_modified: { type: Date, default: Date.now }
+
+
+mongoose.model "Permission", Permission
+mongoose.model "Memory", Memory
 mongoose.model "User", User
+mongoose.model "Map", Map
 
 # Make models available to import.
 module.exports.User = mongoose.model "User"
