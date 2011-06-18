@@ -1,7 +1,7 @@
 # Routes
 #
 # TIP: Remember to use a hash rocket => when using callbacks 
-# within a route in order to bind values to @ variables.
+# within a route in order to access upper-scoped @ variables.
 
 models = require './models'
 
@@ -12,17 +12,16 @@ def User: models.User
 def Map: models.Map
 def Memory: models.Memory
 
-helper login_required: ->
-    redirect '/login' unless session.user?
 
 get '/': ->
-    login_required()
-    Map.find {owner: session.user._id}, (err, maps) =>
+    return redirect '/login' unless session.user?
+    query = Map.find {owner: session.user._id}
+    query.exec (err, maps) =>
         @maps = maps
         render 'dashboard'
 
 get '/maps/map/:mapId': ->
-    login_required()
+    return redirect '/login' unless session.user?
     @years = []
     Map.findById @mapId, (err, map) =>
         if map
@@ -30,12 +29,13 @@ get '/maps/map/:mapId': ->
             Memory.find {map: map._id}, (err, memories) =>
                 @mapId = map._id
                 @years = _.uniq(m.date.getFullYear() for m in memories)
-                @memories = memories
+                @memoryJson = JSON.stringify(memories)
                 render 'map'
 
-post '/memories/memory/:memoryId': ->
-    login_required()
-    if @mapId and params._id
+put '/memories/memory/:memoryId': ->
+    # Update a memory.
+    return redirect '/login' unless session.user?
+    if @memoryId and params._id
         Memory.findById @memoryId, (err, memory) =>
             if err
                 console.log err.stack
@@ -47,14 +47,18 @@ post '/memories/memory/:memoryId': ->
                 if err
                     console.log err.stack
 
+post '/memories/memory': ->
+    # Create a new Memory. Not supported yet.
+    return redirect '/login' unless session.user?
+
 get '/login': ->
     if session.user
         req.flash 'success', "Authenticated as #{session.user.name}"
-        redirect '/'
+        return redirect '/'
     render 'login'
 
 post '/login': ->
-    render '/login' unless params.username
+    return render '/login' unless params.username?
     User.findOne {username: params.username}, (err, user) =>
         found = false
         if err
@@ -64,22 +68,22 @@ post '/login': ->
             salted_password = node_hash.sha1 params.password, salt
             if user.password is salted_password
                 session.user = user
-                redirect '/'
+                return redirect '/'
         @message = "Bad username or password."
         render 'login'
 
 get '/logout': ->
     session.destroy ->
-        redirect '/'
+        return redirect '/'
 
 get '/signup': ->
     if session.user
         request.flash 'success', "Authenticated as #{session.user.name}"
-        redirect '/map'
+        return redirect '/map'
     render 'signup'
 
 post '/signup': ->
-    salt = "superblahblah--#{params.username}"
+    salt = "^&%E^YRHFTH#$Tgeth5--#{params.username}"
     salted_password = node_hash.sha1 params.password, salt
     salted_confirm_password = node_hash.sha1 params.password_confirm, salt
     signup_user = null
@@ -89,16 +93,25 @@ post '/signup': ->
     user.password = salted_password
     user.email = params.email
 
+    # Create a new User, a new session, and redirect to dashboard.
+    create_user = (user) ->
+        user.save (err) ->
+            if err
+                console.log err.stack
+                flash "Sorry, an error occurred! Try again later."
+                return
+            session.regenerate () ->
+                session.user = user
+                return redirect '/'
+
     if salted_password != salted_confirm_password
         message = "Passwords do not match."
     else
         query = {$or: [{username: params.username}, {email: params.email}]}
         User.count query, (err, count) =>
             if count is 0
-                user.save()
-                session.user = user
-                redirect '/'
-            else
-                @message = "Username or password already exists."
-                @signup_user = user
-                render 'signup'
+                # Create a new user and then redirect.
+                new_user(user)
+            @message = "Username or password already exists."
+            @signup_user = user
+            render 'signup'

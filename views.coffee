@@ -40,7 +40,6 @@ view dashboard: ->
                 li -> a href: "/maps/map/" + map._id, -> map.title
 
 view map: ->
-    memoryJson = (memory.toJSON() for memory in @memories)
     # TODO: Generate years with list comprehension in view.
     div id: 'lifemap', ->
         div id: 'content', ->
@@ -81,11 +80,10 @@ view map: ->
             }
             $(window).load(function() {
                 var memories = new MemoryList();
-                memories.url = "/api/v1/map/#{@mapId}";
                 var hc = new HomeController({
                     memories: memories
                 });
-                memories.refresh([#{memoryJson}]);
+                memories.refresh(#{@memoryJson});
                 Backbone.history.start();
     
                 resizeNav();

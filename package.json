@@ -1,0 +1,15 @@
+{
+  "name": "memento",
+  "description": "A web app for sharing location-based memories.",
+  "version": "0.0.2",
+  "author": "Andrew Brookins <a.m.brookins@gmail.com",
+  "repository": {"type": "git", "url": "https://github.com/abrookins/memento.git"},
+  "dependencies": {
+    "zappa": ">= 0.1.5",
+    "underscore": ">= 1.1.6",
+    "mongoose": ">= 1.4.0",
+    "node_hash": ">= 0.1.0"
+  },
+  "keywords": ["coffeescript", "google-maps", "maps"],
+  "engines": { "node": ">= 0.4.8" }
+}

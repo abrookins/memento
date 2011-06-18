@@ -1,5 +1,5 @@
 # Models
-mongoose = require './lib/mongoose'
+mongoose = require 'mongoose'
 db = mongoose.connect 'mongodb://localhost/memento'
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId

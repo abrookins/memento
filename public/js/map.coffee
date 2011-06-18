@@ -12,9 +12,14 @@ user makes to his or her content.
 _.templateSettings =
     interpolate: /\{\{(.+?)\}\}/g
 
-# Models
+# MODELS
 
+# A memory has a location, a time, and a description.
 class Memory extends Backbone.Model
+    # For Mongo compatibility.
+    idAttribute: "_id"
+
+    # Fear the XSS.
     escapedJson: ->
         return json =
             title: @escape "title"
@@ -24,23 +29,27 @@ class Memory extends Backbone.Model
             description: @escape "description"
             _id: @get "_id"
 
+    # Strip a field of its HTML content and return. Tricky!
     getSafe: (fieldName) ->
-        # Strip a field of its HTML content and return.
         tmp = document.createElement "DIV"
         tmp.innerHTML = @get fieldName
         return tmp.textContent or tmp.innerText
 
+    # Get this model's date as a JavaScript Date object.
     getDate: ->
-        # Get this model's date as a JavaScript Date object.
         new Date(Date.parse(@get("date")))
 
+
 class MemoryList extends Backbone.Collection
+    url: "/memories/memory"
     model: Memory
 
 
-# Views
+# VIEWS
 
+# A MarkerView represents a single marker on the map.
 class MarkerView extends Backbone.View
+    # Template for read-only display of marker details in infoWindow.
     template: _.template """
         <div class='marker-content'>
             <div class='marker-header'>
@@ -53,6 +62,7 @@ class MarkerView extends Backbone.View
         </div>
         """
 
+    # Template for editable display of marker details in infoWindow.
     editTemplate: _.template """
         <div class='marker-edit-form'>
             <form id='marker-edit'>
@@ -83,6 +93,7 @@ class MarkerView extends Backbone.View
                   "remove", "openInfoWindow", "readOnlyHtml", "editFormHtml",
                   "handleAction"
 
+        # Respond to 'change' events from the model by re-rendering the view.
         @model.bind 'change', @render
 
         now = new Date()
@@ -100,11 +111,11 @@ class MarkerView extends Backbone.View
         @marker.age = (now.getTime() - date.getTime()) / 86400000
 
         # Show this marker's content when the user clicks its icon.
-        # TODO: Appview listens for event and does this?
         google.maps.event.addListener @marker, "click", => @open()
 
         return this
 
+    # Open an infoWindow on the map containing HTML content.
     openInfoWindow: (content) ->
         maxWidth = @maxWidth
         height = null
@@ -127,18 +138,20 @@ class MarkerView extends Backbone.View
             # Attach a WYSIWYG editor when the infoWidnow opens.
             google.maps.event.addListener @infoWindow, 'domready', => @addEditor()
         else
-            # Clear any lingering events. TODO: should happen when window closes.
+            # Clear any lingering events.
             clear()
-
+        
+        # Clear editor and events when infoWindow closes or content changes.
         google.maps.event.addListener @infoWindow, 'closeclick', -> clear()
         google.maps.event.addListener @infoWindow, 'content_changed', -> clear()
 
+    # Create WYSIWYG editor for the infoWidnow.
     addEditor: ->
-        console.log "adding editor...", @ckeditor
         if not @ckeditor?
             @ckeditor = CKEDITOR.replace 'description-' + @model.get("_id"),
                 toolbar: [['Source', '-', 'Bold', 'Italic', 'Image', 'Link', 'Unlink']]
 
+    # Remove WYSIWYG editor.
     clearEditor: ->
         if @ckeditor?
             CKEDITOR.remove @ckeditor
@@ -149,38 +162,43 @@ class MarkerView extends Backbone.View
         google.maps.event.clearListeners @infoWindow, 'content_changed'
         google.maps.event.clearListeners @infoWindow, 'closeclick'
 
+    # Replace the marker's infoWindow with read-only HTML.
     readOnlyHtml: ->
-        # Replace the marker's infoWindow with read-only HTML.
         return @template @model.toJSON()
 
+    # Replace the marker's infoWindow with an edit form.
     editFormHtml: ->
-        # Replace the marker's infoWindow with an edit form.
         return @editTemplate @model.escapedJson()
 
+    # Handle an action routed from the controller if the action is valid.
     handleAction: (action) ->
-        # Handle an action routed from the controller if the action is valid.
         if typeof @[action] is 'function' and _.indexOf @validActions, action isnt -1
             @[action]()
 
     # ACTIONS
    
+    # Pan to the marker, open read-only infoWindow.
     open: ->
-        # Pan to the marker
         @map.panTo @marker.getPosition()
         if @map.getZoom() < @zoomLevel
             @map.setZoom @zoomLevel
         @editing = false
         @openInfoWindow @readOnlyHtml()
 
+    # Toggle template in open infoWindow to display editable fields.
     edit: ->
         @toggle()
 
+    # Cancel editing, go back to read-only fields.
     cancel: ->
         @toggle()
 
+    # Close the infoWindow.
     close: ->
+        # TODO: Google already provides a close button. Do we need another?
         console.log "Debug: Info window closed"
 
+    # Toggle infoWindow fields between read-only and editable.
     toggle: ->
         content = null
         # If the marker has never been opened, redirect and open.
@@ -197,6 +215,7 @@ class MarkerView extends Backbone.View
         $(@el).html content
         @openInfoWindow content
 
+    # Tell the model to persist its data to the server.
     save: ->
         # This won't work if we aren't on an edit form.
         if not @editing?
@@ -211,12 +230,15 @@ class MarkerView extends Backbone.View
         @model.save()
         @toggle()
 
+    # Remove the marker from the map. TODO: Unused at this time.
     remove: ->
         # Unregister marker events
         google.maps.event.clearInstanceListeners @marker
         # Set map to null, causing marker to be removed per API spec
         @marker.setMap(null)
 
+
+# A view representing a Memory as a single item in a list.
 class NavigationItemView extends Backbone.View
     template: _.template """
         <li>
@@ -258,6 +280,8 @@ class NavigationItemView extends Backbone.View
     remove: ->
         $(@item).remove()
 
+
+# A view representing a list of Memory objects that link to MarkerViews.
 class NavigationView extends Backbone.View
     initialize: ->
         @itemViews= []
@@ -265,7 +289,7 @@ class NavigationView extends Backbone.View
         @year = @getSelectedYear()
 
         _.bindAll @, 'render', 'addOne', 'addAll', 'remove', 'getSelectedYear'
-
+        
         @collection.bind 'add', @addOne
         @collection.bind 'refresh', @render
 
@@ -296,7 +320,7 @@ class NavigationView extends Backbone.View
         # Render all subviews
         $.each @itemViews, -> @render()
 
-    # TODO: Need a different name
+    # TODO: No longer used. Need to refactor, add a real timeline widget.
     renderSlider: ->
         yearSelect = $("#"+@selectId)
         monthSelect = $("#month")
@@ -306,25 +330,29 @@ class NavigationView extends Backbone.View
             #@slider.slider("value", option.index()+1)
             @yearChanged() # TODO: Is this called multiple times?
 
+    # Rmove all subviews
     remove: ->
         if @itemViews
-            # Rmove all subviews
             $.each @itemViews, -> @remove()
             @itemViews = []
 
+    # Get the currenlty selected year in the Year drop-down.
     getSelectedYear: ->
         option = $("#"+@selectId).children("option:selected")
         return option.val()
 
+    # Notify listeners that the user selected a new year.
     yearChanged: ->
         year = @getSelectedYear()
 
-        # Notify watchers of the current years and render subviews.
+        # Notify listeners of the currently selected year and render subviews.
         if not @year? or @year isnt year
             @year = year
             @render()
             @trigger "nav:yearChanged", year
 
+
+# Main view for the app, a composite of other views.
 class AppView extends Backbone.View
     initialize: ->
         @map = null
@@ -400,6 +428,7 @@ class AppView extends Backbone.View
             # TODO: Handle the case where no markers are visible. 
 
 
+# A controller that sends URL-based actions to the app.
 class HomeController extends Backbone.Controller
     routes:
         "markers/marker/:action/:id": "sendActionToMarker"
@@ -427,6 +456,10 @@ class HomeController extends Backbone.Controller
     
     getMapDiv: ->
         return @appView.map.getDiv()
-    
+
+
+# Make the HomeController and Memory list objects available globally,
+# so we can pre-load them with JSON from the server rather than having
+# to GET a collection of memories after rendering the map (less responsive).
 window.HomeController = HomeController
 window.MemoryList = MemoryList

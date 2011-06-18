@@ -37,6 +37,9 @@ parser.parse (err, result) ->
             user ?= new User {username: username}
             # We always trigger a save, even if the user existed.
             user.save (err) ->
+                if err
+                    console.log err
+                    return
                 counter--
                 if counter == 0
                     importMap(user)
