@@ -14,13 +14,10 @@ class Parser
     # Retrieve the georss/XML feed and parse it into JSON.
     getJson: (callback) ->
         request {uri: @url}, (err, response, body) ->
-            if err?
-                callback(err)
+            return callback err if err?
             parser = new xml2js.Parser()
             parser.addListener 'end', (result, err) ->
-                if err and error?
-                    callback(err)
-                callback null, result
+                return callback err, result
             parser.parseString body
 
     # Parse a single item in a feed.
@@ -45,17 +42,10 @@ class Parser
     parse: (callback) ->
         @getJson (err, result) ->
             entries = []
-            if err?
-                callback(err, null)
+            return callback err if err?
             for entry in result.channel.item
-                try
-                    entry = parseItem(entry)
+                    entry = parseItem entry
                     entries.push entry if entry?
-                catch error
-                    if error instanceof GeoRssError
-                        console.log error.message
-                    else
-                        throw error
             parsedResult =
                 title: result.channel.title
                 subtitle: result.channel.title

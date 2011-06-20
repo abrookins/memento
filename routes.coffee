@@ -15,8 +15,7 @@ def Memory: models.Memory
 
 get '/': ->
     return redirect '/login' unless session.user?
-    query = Map.find {owner: session.user._id}
-    query.exec (err, maps) =>
+    Map.find {owner: session.user._id}, (err, maps) =>
         @maps = maps
         render 'dashboard'
 
@@ -24,9 +23,11 @@ get '/maps/map/:mapId': ->
     return redirect '/login' unless session.user?
     @years = []
     Map.findById @mapId, (err, map) =>
+        return console.log err.stack if err?
         if map
             # TODO: memories as embedded documents?
             Memory.find {map: map._id}, (err, memories) =>
+                return console.log err.stack if err?
                 @mapId = map._id
                 @title = map.title
                 @years = _.uniq(m.date.getFullYear() for m in memories)
@@ -37,15 +38,12 @@ post '/memories/memory/:memoryId': ->
     return redirect '/login' unless session.user?
     if @mapId and params._id
         Memory.findById @memoryId, (err, memory) =>
-            if err
-                console.log err.stack
-                return
+            return console.log err.stack if err?
             for field, value of params
                 skip = ['_id', 'mapId', 'permissions'] # TODO: why permissions fail?
                 memory[field] = value if field not in skip and value isnt undefined
             memory.save (err) ->
-                if err
-                    console.log err.stack
+                return console.log err.stack if err?
 
 get '/login': ->
     if session.user
@@ -57,8 +55,7 @@ post '/login': ->
     return render '/login' unless params.username?
     User.findOne {username: params.username}, (err, user) =>
         found = false
-        if err
-            console.log "Error", err
+        return console.log err.stack if err?
         if user
             salt = "superblahblah--#{params.username}"
             salted_password = node_hash.sha1 params.password, salt
@@ -75,7 +72,7 @@ get '/logout': ->
 get '/signup': ->
     if session.user
         request.flash 'success', "Authenticated as #{session.user.name}"
-        return redirect '/map'
+        return redirect '/'
     render 'signup'
 
 post '/signup': ->

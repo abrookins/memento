@@ -89,6 +89,7 @@ view map: ->
                 resizeNav();
             });
             $(window).resize(function() {
+                console.log("working");
                 resizeNav();
             });
         })(jQuery);

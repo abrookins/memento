@@ -21,19 +21,16 @@ parser = new Parser url
 # Parse the JSONified GeoRSS feed.
 parser.parse (err, result) ->
     # Bail early if we couldn't parse the feed.
-    if err
-        console.log err.stack
+    return console.log err.stack if err?
     
     # Get or create a user.
     User.findOne {username: username}, (err, user) ->
-        if err
-            console.log err.stack
+        return console.log err.stack if err?
         user ?= new User {username: username}
         # Always trigger a save, even if the user existed.
         user.save (err) ->
-            if err
-                console.log err.stack
-            importMap(user)
+            return console.log err.stack if err?
+            importMap user
     
     # Get or create a map owned by the user.
     importMap = (user) ->
@@ -44,8 +41,8 @@ parser.parse (err, result) ->
                 canView: yes
                 canChange: yes
                 canDelete: yes
-            if err
-                console.log err.stack
+            return console.log err.stack if err?
+                
             # Get or create a map with the title of the feed.
             # TODO: Not really really safe.
             map ?= new Map
@@ -55,9 +52,8 @@ parser.parse (err, result) ->
             # TODO: Creates two perms? Diagnose.
             map.permissions.push fullPermissions
             map.save (err) ->
-                if err
-                    console.log err
-                importItems(map, user, fullPermissions)
+                return console.log err if err?
+                importItems map, user, fullPermissions
 
     # Import GeoRSS items as Memories.
     importItems = (map, user, permissions) ->
@@ -73,6 +69,6 @@ parser.parse (err, result) ->
                 owner: user._id
                 permissions: [permissions]
             memory.save (err) ->
-                if err
-                    console.log err
-        console.log "Done importing."
+                return console.log err if err?
+                    
+return console.log "Done importing."

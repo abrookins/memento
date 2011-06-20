@@ -98,8 +98,8 @@ class MarkerView extends Backbone.View
 
         now = new Date()
         date = @model.getDate()
-        position = new google.maps.LatLng(parseFloat(@model.get("lat")),
-                                          parseFloat(@model.get("lon")))
+        position = new google.maps.LatLng(parseFloat @model.get("lat"),
+                                          parseFloat @model.get("lon"))
         
         #Create a new Google Maps marker for this memory.
         @marker = new google.maps.Marker
@@ -203,7 +203,7 @@ class MarkerView extends Backbone.View
         content = null
         # If the marker has never been opened, redirect and open.
         if not @editing?
-            window.location = "#markers/marker/open/" + @model.get("_id")
+            window.location = "#markers/marker/open/" + @model.get "_id"
             return
         if @editing
             content = @readOnlyHtml()
@@ -220,8 +220,8 @@ class MarkerView extends Backbone.View
         # This won't work if we aren't on an edit form.
         if not @editing?
             return
-        title = $("#title").val()
-        place = $("#place").val()
+        title = ($ "#title").val()
+        place = ($ "#place").val()
         description = @ckeditor.getData()
         @model.set
             title: title,
@@ -235,7 +235,7 @@ class MarkerView extends Backbone.View
         # Unregister marker events
         google.maps.event.clearInstanceListeners @marker
         # Set map to null, causing marker to be removed per API spec
-        @marker.setMap(null)
+        @marker.setMap null
 
 
 # A view representing a Memory as a single item in a list.
@@ -257,7 +257,7 @@ class NavigationItemView extends Backbone.View
         sliceEnd = maxDescLength
         date = @model.getDate()
         markerYear = date.getFullYear() # unused
-        navigation = $("#navigation-items")
+        navigation = ($ "#navigation-items")j
         description = @model.getSafe "description"
         shortDescription = ""
 
@@ -305,7 +305,7 @@ class NavigationView extends Backbone.View
     addAll: (year) ->
         @collection.each (memory) =>
             if year is "Any" or memory.getDate().getFullYear().toString() is year
-                @addOne(memory)
+                @addOne memory
 
     render: ->
         if not @slider?
@@ -322,8 +322,8 @@ class NavigationView extends Backbone.View
 
     # TODO: No longer used. Need to refactor, add a real timeline widget.
     renderSlider: ->
-        yearSelect = $("#"+@selectId)
-        monthSelect = $("#month")
+        yearSelect = ($ "#"+@selectId)
+        monthSelect = ($ "#month")
 
         yearSelect.change =>
             option = yearSelect.children("option:selected")
@@ -338,7 +338,7 @@ class NavigationView extends Backbone.View
 
     # Get the currenlty selected year in the Year drop-down.
     getSelectedYear: ->
-        option = $("#"+@selectId).children("option:selected")
+        option = ($ "#"+@selectId).children("option:selected")
         return option.val()
 
     # Notify listeners that the user selected a new year.
@@ -362,7 +362,7 @@ class AppView extends Backbone.View
         defaults =
             mapId: "map"
             infoWindowMaxWidth: 350
-            center: new google.maps.LatLng(45.52, -122.68)
+            center: new google.maps.LatLng 45.52, -122.68
             mapTypeId: google.maps.MapTypeId.TERRAIN
             defaultZoomLevel: 10
 
@@ -377,7 +377,7 @@ class AppView extends Backbone.View
     sendActionToMarker: (action, id) ->
         markers = _.select @markerViews, (view) -> view.model.get("_id") is id
         if markers[0]
-            markers[0].handleAction(action)
+            markers[0].handleAction action
 
     initMap: ->
         mapOptions =
