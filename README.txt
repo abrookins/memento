@@ -12,6 +12,12 @@ The front-end, located in public/js/map.coffee, is also written in
 CoffeeScript and uses Backbone.js to organize logic between models,
 views, and controllers.
 
+I still need to implement an AJAX create form in the front-end for
+adding items to a map. Until then, there is a command-line node.js
+script that will import an RSS feed with geographical data and
+create map items ("memories"). See: import_georss.coffee and
+georss.coffee.
+
 FORMALITIES 
 
 Warning: This app is not packaged for deployment and is at present

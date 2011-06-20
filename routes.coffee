@@ -1,7 +1,7 @@
 # Routes
 #
 # TIP: Remember to use a hash rocket => when using callbacks 
-# within a route in order to access upper-scoped @ variables.
+# within a route in order to bind values to @ variables.
 
 models = require './models'
 
@@ -28,14 +28,14 @@ get '/maps/map/:mapId': ->
             # TODO: memories as embedded documents?
             Memory.find {map: map._id}, (err, memories) =>
                 @mapId = map._id
+                @title = map.title
                 @years = _.uniq(m.date.getFullYear() for m in memories)
                 @memoryJson = JSON.stringify(memories)
                 render 'map'
 
-put '/memories/memory/:memoryId': ->
-    # Update a memory.
+post '/memories/memory/:memoryId': ->
     return redirect '/login' unless session.user?
-    if @memoryId and params._id
+    if @mapId and params._id
         Memory.findById @memoryId, (err, memory) =>
             if err
                 console.log err.stack
@@ -46,10 +46,6 @@ put '/memories/memory/:memoryId': ->
             memory.save (err) ->
                 if err
                     console.log err.stack
-
-post '/memories/memory': ->
-    # Create a new Memory. Not supported yet.
-    return redirect '/login' unless session.user?
 
 get '/login': ->
     if session.user

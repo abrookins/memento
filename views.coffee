@@ -44,7 +44,7 @@ view map: ->
     div id: 'lifemap', ->
         div id: 'content', ->
             div id: 'navigation-container', ->
-                h1 id: 'navigation-header', -> "Moments"
+                h1 id: 'navigation-header', -> @title
                 div id: 'timeline-container', ->
                     div id: 'timeline', ->
                         form id: 'timeline-select', ->
@@ -96,7 +96,7 @@ view map: ->
 layout ->
     html ->
         head ->
-            title 'Our Life'
+            title @title
             link type: 'text/css', href: '/css/Aristo/jquery-ui-1.8.5.custom.css', rel: 'stylesheet'
             link type: 'text/css', href: '/css/moments.css', rel: 'stylesheet'
             script type: "text/javascript", src: 'http://maps.google.com/maps/api/js?sensor=false'

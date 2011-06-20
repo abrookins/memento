@@ -4,6 +4,7 @@ db = mongoose.connect 'mongodb://localhost/memento'
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
+# Schemas - required to register a model.
 Permission = new Schema
     user: ObjectId
     canView: {type: Boolean, default: no}
@@ -13,7 +14,7 @@ Permission = new Schema
 Memory = new Schema
     title: String
     description: String
-    place: String
+    place: { type: String, default: ""}
     lat: Number
     lon: Number
     date: Date
@@ -38,7 +39,7 @@ User = new Schema
     date_added: { type: Date, default: Date.now }
     date_modified: { type: Date, default: Date.now }
 
-
+# Register models.
 mongoose.model "Permission", Permission
 mongoose.model "Memory", Memory
 mongoose.model "User", User
