@@ -27,7 +27,7 @@ class Parser
             switch key
                 when "pubDate" then entry[key] = new Date(Date.parse val)
                 when "georss:point"
-                    # GeoRSS format is a string with lat and long, IE, "-22.33 44.55"
+                    # GeoRSS format is a string with lat and long, e.g., "-22.33 44.55"
                     point["lat"] = val.split(' ')[0]
                     point["lon"] = val.split(' ')[1]
                 when "geo:lat" then point["lat"] = val # A non-GeoRSS format
@@ -44,8 +44,8 @@ class Parser
             entries = []
             return callback err if err?
             for entry in result.channel.item
-                    entry = parseItem entry
-                    entries.push entry if entry?
+                entry = parseItem entry
+                entries.push entry if entry?
             parsedResult =
                 title: result.channel.title
                 subtitle: result.channel.title
