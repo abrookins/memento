@@ -1,4 +1,3 @@
-# A simple XML parser tuned to GeoRSS feeds.
 request = require 'request'
 sys = require 'sys'
 xml2js = require 'xml2js-expat'  # It's pretty fast.
@@ -53,5 +52,5 @@ class Parser
             callback null, parsedResult
 
     
-# Export parser.
+# Export the parser.
 module.exports.Parser = Parser
